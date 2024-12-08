@@ -1,8 +1,8 @@
 /*
 file USsensor.h
 @brief DFRobot_A02_Distance class
-Modified from the Python code as the Arduino is not well documented
-Richard Hosking Apr2024
+Modified from the Python code as the Arduino C++ is not well documented
+Richard Hosking Apr- Dec 2024
 @copyright   Copyright (c) 2010 DFRobot Co.Ltd (http://www.dfrobot.com)
 @license     The MIT License (MIT)
 @author      Arya(xue.peng@dfrobot.com)
@@ -17,11 +17,11 @@ Richard Hosking Apr2024
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-//int tx = 10;
-//int rx = 11;
-//int baud = 9600;
+// Define distance limits for transducer 280 to 7500mm 
+#define DISTANCE_MAX 7500
+#define DISTANCE_MIN 280
 
-// US status
+// Status codes - "last_operate_status" is defined in inherited class
 enum status_t
 {
   STA_OK = 0x00,
@@ -35,36 +35,33 @@ enum status_t
 // rebuild class from Python code - inherit SoftwareSerial library
 class USsensor : public SoftwareSerial {
   public:
-  // seem to need explicit constructor to avoid error
-  //USsensor();   // : SoftwareSerial(TX, RX) {};
-  USsensor(int RX, int TX, bool inverse);
-  //int port(int TX, int RX);
-  void begin(int BAUD);
-  void set_dis_range(int min, int max);
-  int getDistance();
-  int get_last_operate_status();
   
-  void _measure();
-  int check_sum(unsigned char l[]);
-  int _check_out_limit(int distance);
-  int _check_low_limit(int distance);
-
+  USsensor(int RX, int TX, bool inverse);
+  void begin(int BAUD);
+  int get_last_operate_status();
+  int measure();
+  int check_sum(unsigned char checksum[]);
+  void clearBuffer();
+  void receiveFrame();
+  
   int distance_max;
   int distance_min;
-  int range_max;
   int last_operate_status;
   int distance;
   int sum;
   SoftwareSerial ser;
-  private:
+
+ private:
   // Array to hold data from serial port
-  // Byte[0] = 0xFF if valid data 
-  // Byte[1] = high byte of distance
-  // Byte[2] = low byte of distance
-  // Byte[3] = checksum
+  // Byte[3] = 0xFF if valid data 
+  // Byte[0] = high byte of distance
+  // Byte[1] = low byte of distance
+  // Byte[2] = checksum
   
   unsigned char data[4]={};
-  
+  unsigned char startFrame = 0xFF;
+  unsigned char rc;
+  bool newData = false;
 };
 
 #endif
